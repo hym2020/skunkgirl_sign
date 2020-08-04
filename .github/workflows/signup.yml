@@ -27,6 +27,8 @@ jobs:
               run: |
                 echo "Install Dependencies"
                 npm i
+                echo "Compile scripts"
+                npm run build
                 echo "Make Cookies file"
                 node dist/parseCookie.js make
                 npm run signup
