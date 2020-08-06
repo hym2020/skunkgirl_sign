@@ -9,6 +9,44 @@ const downloader = (() => {
 
 	let driverVersion
 
+	function searchFromSite(){
+		return new Promise((resolve, reject) => {
+			request({
+				url: 'https://chromedriver.chromium.org/downloads',
+				headers: { ...UA },
+				method: 'GET'
+			}, (err, res, body) => {
+				if(err)
+					return reject(false)
+				
+				const getChromeURL = (anchors => {
+					if(anchors === null)
+						return 'HTML_NOT_VAILD'
+					let versions = anchors
+									.filter(e => /path=[0-9\.]+/.test(e))
+									.map(e => e.match(/path=[0-9\.]+/))
+									.filter(e => e !== null)
+									.map(e => e[0].split('=').length == 2 ? e[0].split('=')[1] : false)
+									.filter(e => e)
+									.map(e => Object.defineProperties({}, {
+										 shortVersion: {value: e.split('.')[0], enumerable: true},
+										 fullVersion: {value: e, enumerable: true}
+									 }))
+									.sort((x, y) => parseInt(y.shortVersion) - parseInt(x.shortVersion))
+					return function(chromeBrowserVersion){
+						const chromeVersion = versions.find(e => chromeBrowserVersion.toString() == e.shortVersion)
+						if(typeof chromeVersion == 'undefined')
+							return 'VERSION_NOT_FOUND'
+					
+						return chromeVersion.fullVersion
+					}
+				})(body.match(/<a href=.+?>/gm));
+
+				return resolve(getChromeURL)
+			})
+		})
+	}
+
 	function getLatestDriver(){
 		return new Promise((resolve, reject) => {
 			request({
@@ -69,6 +107,24 @@ const downloader = (() => {
 			}
 			catch(e){
 				return Promise.reject({message: 'Get driver version failed'})
+			}
+		}
+
+		async searchDriver(chromeVersion){
+			try{
+				const getDriverVersion = await searchFromSite()
+				
+				if(typeof getDriverVersion != 'function')
+					return Promise.reject({message: 'Get driver download page failed'})
+				
+				const chromedriverVersion = getDriverVersion(chromeVersion)
+				if(chromedriverVersion == 'VERSION_NOT_FOUND')
+					return Promise.reject({message: 'Cannot find the driver version'})
+				
+				return driverVersion = chromedriverVersion
+			}
+			catch(e){
+				return Promise.reject({message: `Search driver version failed: ${e.message}`})
 			}
 		}
 

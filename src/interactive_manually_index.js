@@ -19,7 +19,7 @@ async function main(){
             console.log('Webdriver found!!')
         else{
             console.log('Webdriver not found, continue to download steps.')
-            rst = await ask('Please specify the current version of chrome webdriver, or just leave blank for default: ')
+            rst = await ask('Please specify the current version of your chrome browser, or just leave blank for default: ')
             if(rst.length == 0)
                 chromeVerion = 'DEFAULT'
             else
@@ -29,8 +29,11 @@ async function main(){
             console.log('Now setting the latest chromedriver version...')
             if(chromeVerion == 'DEFAULT')
                 await downloader.getLatestVersion()
-            else
-                downloader.setDriverVersion(chromeVerion)
+            else {
+                console.log(`Your browser version is ${chromeVerion}, now searching the corresponding chromedriver version...`)
+                const chromedriverVersion = await downloader.searchDriver(chromeVerion)
+                console.log(`The chromedriver version is ${chromedriverVersion}`)
+            }
             console.log('Version already set.')
             console.log(SM_DIVIDER)
 
